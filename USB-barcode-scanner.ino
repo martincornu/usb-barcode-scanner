@@ -2,16 +2,23 @@
  * Barcode Scanner Arduino
  * Original code by: RadhiFadhillah (github) https://github.com/felis/USB_Host_Shield_2.0/issues/323
  * Modified by: Dirga Brajamusti (dirgabrajamusti::github)
+ * Modified by: Martin C. on 30/10/21
  */
 #include <usbhid.h>
 #include <usbhub.h>
 #include <hiduniversal.h>
 #include <hidboot.h>
 #include <SPI.h>
-#include <Servo.h>
 
+#define DEBUG         // Décommenter si besoin d'afficher des infos au moniteur série
+
+const uint8_t numBarcodes = 3;          /* Nombre de codes barres */
+const uint8_t ledGreenPin = A2;         /* Pin de la led verte */
+const uint8_t ledRedPin = A3;           /* Pin de la led rouge */
+const uint8_t winPin = 3;              /* Pin de sortie a activer/desactiver si le puzzle est resolu*/
+
+const String  correctIDs[] = {"lpnhe521307353", "b07j2kkgz4", "3000000012390"}; /* Suite d'identifiant de readers à realiser pour resoudre le puzzle */
 String hasil;
-
 
 class MyParser : public HIDReportParser {
   public:
@@ -69,8 +76,35 @@ void MyParser::OnKeyScanned(bool upper, uint8_t mod, uint8_t key) {
 }
 
 void MyParser::OnScanFinished() {
+  static uint8_t l_u8Cnt = 0u;
+
+  if (correctIDs[l_u8Cnt] == hasil){
+    l_u8Cnt++;
+
+    if (l_u8Cnt == numBarcodes) {
+
+    #ifdef DEBUG
+      Serial.println(F("Puzzle solved!"));
+    #endif
+      digitalWrite(winPin, HIGH);       // Turn laser on
+      digitalWrite(ledGreenPin, HIGH);
+      digitalWrite(ledRedPin, LOW);
+      
+      while(1){}  //exit program
+    }
+  }else{
+    l_u8Cnt = 0u;
+
+    digitalWrite(ledRedPin, HIGH);
+    digitalWrite(ledGreenPin, LOW);
+  }
+
+#ifdef DEBUG
   Serial.println(hasil);
-  hasil = "";
+  Serial.println(l_u8Cnt);
+#endif
+
+  hasil = ""; // clear buffer
 }
 
 USB          Usb;
@@ -79,11 +113,23 @@ HIDUniversal Hid(&Usb);
 MyParser     Parser;
 
 void setup() {
+
+  pinMode(winPin, OUTPUT);
+  digitalWrite(winPin, LOW);
+  pinMode(ledGreenPin, OUTPUT);
+  digitalWrite(ledGreenPin, LOW);
+  pinMode(ledRedPin, OUTPUT);
+  digitalWrite(ledRedPin, HIGH);
+
+#ifdef DEBUG  
   Serial.begin(115200);
   Serial.println("Start");
+#endif
   
   if (Usb.Init() == -1) {
+  #ifdef DEBUG  
     Serial.println("OSC did not start.");
+  #endif
   }
 
   delay(200);
