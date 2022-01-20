@@ -12,12 +12,12 @@
 
 #define DEBUG         // Décommenter si besoin d'afficher des infos au moniteur série
 
-const uint8_t numBarcodes = 3;          /* Nombre de codes barres */
+const uint8_t numBarcodes = 4;          /* Nombre de codes barres */
 const uint8_t ledGreenPin = A2;         /* Pin de la led verte */
 const uint8_t ledRedPin = A3;           /* Pin de la led rouge */
 const uint8_t winPin = 3;              /* Pin de sortie a activer/desactiver si le puzzle est resolu*/
 
-const String  correctIDs[] = {"lpnhe521307353", "b07j2kkgz4", "3000000012390"}; /* Suite d'identifiant de readers à realiser pour resoudre le puzzle */
+const String  correctIDs[] = {"xwcl02bxjl", "xwcl04bxjl", "xwcl10bxjl", "xwcl05bxjl"}; /* Suite d'identifiant de readers à realiser pour resoudre le puzzle */
 String hasil;
 
 class MyParser : public HIDReportParser {
@@ -78,6 +78,11 @@ void MyParser::OnKeyScanned(bool upper, uint8_t mod, uint8_t key) {
 void MyParser::OnScanFinished() {
   static uint8_t l_u8Cnt = 0u;
 
+#ifdef DEBUG
+  Serial.println(hasil);
+  Serial.println(l_u8Cnt);
+#endif
+
   if (correctIDs[l_u8Cnt] == hasil){
     l_u8Cnt++;
 
@@ -98,11 +103,6 @@ void MyParser::OnScanFinished() {
     digitalWrite(ledRedPin, HIGH);
     digitalWrite(ledGreenPin, LOW);
   }
-
-#ifdef DEBUG
-  Serial.println(hasil);
-  Serial.println(l_u8Cnt);
-#endif
 
   hasil = ""; // clear buffer
 }
